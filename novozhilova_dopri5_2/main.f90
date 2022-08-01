@@ -123,6 +123,12 @@ program sys15f
         write (3, '(4e17.8)') tax(i + 1), wos(1, i), wos(2, i), wos(3, i)
     end do
     close (3)
+    
+    open(4,file='PHI.dat')
+    do i = 1, nt - 1
+        write (4, '(4e17.8)') tax(i + 1), f(2, i), f(4, i), f(6, i)
+    end do
+    close(4)
 
     stop
 101 print *, 'error of file open.'
