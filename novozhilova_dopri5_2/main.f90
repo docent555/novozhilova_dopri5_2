@@ -35,7 +35,6 @@ program sys15f
 
     do i = 2, nt
         do j = 1, 3
-            !w(j, i - 1) = dimag(log(f(2*j - 1, i)*cdexp(ic*f(2*j, i))/(f(2*j - 1, i - 1)*cdexp(ic*f(2*j, i - 1)))))/dt
             w(j, i - 1) = (f(2*j, i) - f(2*j, i - 1))/dt
         end do
     end do
@@ -78,7 +77,6 @@ program sys15f
 
     open (1, file='F.dat')
     do i = 1, nt
-        !write (1, '(4e17.8)') tax(i), dabs(f(1, i)), dabs(f(3, i)), dabs(f(5, i))
         write (1, '(4e17.8)') tax(i), f(1, i), f(3, i), f(5, i)
     end do
     close (1)
@@ -107,7 +105,6 @@ program sys15f
 
     open (1, file='P.dat')
     do i = 1, nt
-        !write (1, '(4e17.8)') tax(i), phi(1, i), phi(2, i), phi(3, i)
         write (1, '(4e17.8)') tax(i), f(2, i), f(4, i), f(6, i)
     end do
     close (1)
@@ -123,12 +120,6 @@ program sys15f
         write (3, '(4e17.8)') tax(i + 1), wos(1, i), wos(2, i), wos(3, i)
     end do
     close (3)
-    
-    open(4,file='PHI.dat')
-    do i = 1, nt - 1
-        write (4, '(4e17.8)') tax(i + 1), f(2, i), f(4, i), f(6, i)
-    end do
-    close(4)
 
     stop
 101 print *, 'error of file open.'
