@@ -76,12 +76,18 @@ program sys15f
    write (*, '(/)')
 
    pause
+
+   open (3, file='cl1.dat')
+   do i = 1, nt
+      write (3, '(4e17.8)') tax(i), cl1(i), lhs1(i), rhs1(i)
+   end do
+   close (3)
    
-   open (3, file='cl.dat')
-      do i = 1, nt
-         write (3, '(4e17.8)') tax(i), cl(i), lhs(i), rhs(i)
-      end do
-      close (3)
+   open (3, file='cl2.dat')
+   do i = 1, nt
+      write (3, '(4e17.8)') tax(i), cl2(i), lhs2(i), rhs2(i)
+   end do
+   close (3)
 
    open (1, file='F.dat')
    do i = 1, nt

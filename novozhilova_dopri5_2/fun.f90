@@ -14,7 +14,7 @@ module fun
    integer(c_int), allocatable, target :: idxre(:, :), idxim(:, :), iworkf(:), iworkp(:)
    complex(c_double_complex), allocatable, target :: mean(:)
    real(c_double), allocatable, target :: tax(:), zax(:), u(:), eta(:, :), etag(:, :), w(:, :), f(:, :), w1(:, :), p(:, :), &
-                                          phi(:, :), phios(:, :), wos(:, :), workf(:), workp(:), cl(:), lhs(:), rhs(:)
+                           phi(:, :), phios(:, :), wos(:, :), workf(:), workp(:), cl1(:), lhs1(:), rhs1(:), cl2(:), lhs2(:), rhs2(:)
 
    complex(c_double_complex), parameter :: ic = (0.0d0, 1.0d0)
    real(c_double), parameter :: pi = 2.0D0*dacos(0.0D0)
@@ -98,7 +98,7 @@ contains
 
       allocate (f(6, nt), p(4*ne, nz), u(nz), tax(nt), zax(nz), mean(nz), eta(2, nt), etag(2, nt), w(3, nt - 1), w1(3, nt - 1), &
                 idxre(2, ne), idxim(2, ne), workf(lworkf), iworkf(liworkf), workp(lworkp), iworkp(liworkp), &
-                wos(3, nt - 1), phi(3, nt), phios(3, nt), cl(nt), lhs(nt), rhs(nt), &
+                wos(3, nt - 1), phi(3, nt), phios(3, nt), cl1(nt), lhs1(nt), rhs1(nt), cl2(nt), lhs2(nt), rhs2(nt), &
                 !pgot(neqp), ppgot(neqp), pmax(neqp), thres(neqp), workp(lenwrkp), &
                 stat=err_alloc)
 
@@ -234,7 +234,7 @@ contains
                     workp, lworkp, iworkp, liworkp, arparp, aiparp, ididp)
 
       p(:, nz) = yp(:)
-      
+
       !open (1, file='test.dat')
       !do i = 1, nz
       !    write(1,'(3f17.8)') zax(i), p(7,i), p(8,i)
@@ -293,7 +293,7 @@ contains
       do j = 1, neqf
          f(j, nt) = yf(j)
       end do
-      call calcpex(f(:, nt), pex, cl(nt), lhs(nt), rhs(nt))
+      call calcpex(f(:, nt), pex, cl1(nt), lhs1(nt), rhs1(nt), cl2(nt), lhs2(nt), rhs2(nt))
       eta(:, nt) = eff(pex)
       !eta(:, nt) = eff(p(:, nz))
       etag(:, nt) = pitch**2/(pitch**2 + 1)*eta(:, nt)
@@ -590,12 +590,12 @@ contains
          do j = 1, neqf
             f(j, itf) = y(j)
          end do
-         call calcpex(y, pex, cl(itf), lhs(itf), rhs(itf))
+         call calcpex(y, pex, cl1(itf), lhs1(itf), rhs1(itf), cl2(itf), lhs2(itf), rhs2(itf))
          eta(:, itf) = eff(pex)
          !eta(:, itf) = eff(p(:, nz))
          etag(:, itf) = pitch**2/(pitch**2 + 1)*eta(:, itf)
-            write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f8.5,a,f8.5,a,f8.5,\,a)') 'Time = ', xoutf, '   |F1| = ', abs(f(1,itf)), '   |F2| = ', abs(f(3,itf)), &
-            '   |F3| = ', abs(f(5, itf)), '   Eff1 = ', eta(1, itf), '   Eff2 = ', eta(2, itf), '  c.l. =', cl(itf), '  lhs =', lhs(itf), '  rhs =', rhs(itf), char(13)
+            write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f8.5,a,f8.5,\,a)') 'Time = ', xoutf, '   |F1| = ', abs(f(1,itf)), '   |F2| = ', abs(f(3,itf)), &
+            '   |F3| = ', abs(f(5, itf)), '   Eff1 = ', eta(1, itf), '   Eff2 = ', eta(2, itf), '  cl1 =', cl1(itf), '  cl2 =', cl2(itf), char(13)
          xoutf = x + dt
       else
 10       continue
@@ -604,12 +604,12 @@ contains
             do j = 1, neqf
                f(j, itf) = contd5_f(j, xoutf, con, icomp, nd)
             end do
-            call calcpex(f(:, itf), pex, cl(itf), lhs(itf), rhs(itf))
+            call calcpex(y, pex, cl1(itf), lhs1(itf), rhs1(itf), cl2(itf), lhs2(itf), rhs2(itf))
             eta(:, itf) = eff(pex)
             !eta(:, itf) = eff(p(:, nz))
             etag(:, itf) = pitch**2/(pitch**2 + 1)*eta(:, itf)
-                write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f8.5,a,f8.5,a,f8.5,\,a)') 'Time = ', xoutf, '   |F1| = ', abs(f(1,itf)), '   |F2| = ', abs(f(3,itf)), &
-               '   |F3| = ', abs(f(5, itf)), '   Eff1 = ', eta(1, itf), '   Eff2 = ', eta(2, itf), '  c.l. =', cl(itf), '  lhs =', lhs(itf), '  rhs =', rhs(itf), char(13)
+                write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f8.5,a,f8.5,\,a)') 'Time = ', xoutf, '   |F1| = ', abs(f(1,itf)), '   |F2| = ', abs(f(3,itf)), &
+               '   |F3| = ', abs(f(5, itf)), '   Eff1 = ', eta(1, itf), '   Eff2 = ', eta(2, itf), '  cl1 =', cl1(itf), '  cl2 =', cl2(itf), char(13)
             xoutf = xoutf + dt
             goto 10
          end if
@@ -668,11 +668,11 @@ contains
       return
    end subroutine soloutp
 
-   subroutine calcpex(f, yp, c, lhs, rhs)
+   subroutine calcpex(f, yp, c1, lhs1, rhs1, c2, lhs2, rhs2)
       implicit none
 
-      real(8), intent(inout) :: c, lhs, rhs
-      
+      real(8), intent(inout) :: c1, lhs1, rhs1, c2, lhs2, rhs2
+
       real(c_double), intent(in) :: f(neqf)
       real(c_double) z, yp(neqp), artolp(1), aatolp(1), arparp(1), xoutp, p2ex_mean(2), p20_mean(2)
       integer(c_int) i, aiparp(1), itp
@@ -704,21 +704,24 @@ contains
 
       call dopri5_p(neqp, dpdz, z, yp, zex, artolp, aatolp, itolp, solout_fiction, 0, &
                     workp, lworkp, iworkp, liworkp, arparp, aiparp, ididp)
-      
+
       do i = 1, 2
-            
-            ptmp(:) = dcmplx(p(idxre(i, :), 1), p(idxim(i, :), 1))            
-            p20_mean(i) = sum(cdabs(ptmp(:)*cdabs(ptmp(:))))/ne
-            
-            ptmp(:) = dcmplx(yp(idxre(i, :)), yp(idxim(i, :)))            
-            p2ex_mean(i) = sum(cdabs(ptmp(:)*cdabs(ptmp(:))))/ne
+
+         ptmp(:) = dcmplx(p(idxre(i, :), 1), p(idxim(i, :), 1))
+         p20_mean(i) = sum(cdabs(ptmp(:)*cdabs(ptmp(:))))/ne
+
+         ptmp(:) = dcmplx(yp(idxre(i, :)), yp(idxim(i, :)))
+         p2ex_mean(i) = sum(cdabs(ptmp(:)*cdabs(ptmp(:))))/ne
       end do
-      
-      lhs = 4*f(1)**2 - 8*r(1)*f(5)*f(1)*dcos(th(1)-f(6)+f(2))
-      rhs = -icu(1)*(p2ex_mean(1) - p20_mean(1))
-      
-      c = lhs - rhs
-      
+
+      lhs1 = 4*f(1)**2 - 8*r(1)*f(5)*f(1)*dcos(th(1) - f(6) + f(2))
+      rhs1 = -icu(1)*(p2ex_mean(1) - p20_mean(1))
+      c1 = lhs1 - rhs1
+
+      lhs2 = 4*f(3)**2 - 8*r(2)*f(5)*f(3)*dcos(th(2) - f(6) + f(4))
+      rhs2 = -icu(2)*(p2ex_mean(2) - p20_mean(2))
+      c2 = lhs2 - rhs2
+
    end subroutine calcpex
 
    subroutine solout_fiction
