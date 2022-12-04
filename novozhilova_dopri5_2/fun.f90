@@ -2,10 +2,11 @@ module fun
    use, intrinsic :: iso_c_binding
    use ifcore
 
-    integer(c_int) ne, nt, nz, neqf, neqp, lworkf, lworkp, liworkf, liworkp, nrdf, nrdp, iparf, iparp, ioutf, ioutp, ididf, ididp, itolf, itolp
+   integer(c_int) ne, nt, nz, neqf, neqp, lworkf, lworkp, liworkf, liworkp, nrdf, nrdp, iparf, iparp, ioutf, ioutp, ididf, ididp, itolf, itolp
    real(c_double) zex, dz, tend, dtr(2), q(3), icu(2), th(2), a(2), dcir(2), r(2), f0(3), dt, &
       pitch, f10, f20, f30, p10, p20, p30, rtolf, rtolp, atolf, atolp, rparf, rparp, ftol, ptol, ng
    complex(c_double_complex) fp(2)
+   logical(c_bool) wc
 
    integer(c_int) breaknum(3)
    real(c_double) phitmp0(3), phitmp1(3)
@@ -130,7 +131,7 @@ contains
       implicit none
 
       namelist /param/ ne, tend, zex, q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, &
-         dcir1, dcir2, r1, r2, f10, f20, f30, p10, p20, p30, dt, dz, pitch, ftol, ptol
+         dcir1, dcir2, r1, r2, f10, f20, f30, p10, p20, p30, dt, dz, pitch, ftol, ptol, wc
 
       real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, dcir1, dcir2, r1, r2, tol
 
@@ -190,6 +191,137 @@ contains
 101   print *, "error of file open"; pause; stop
 102   print *, 'error of reading file "input_fortran.in"'; pause; stop
    end subroutine write_param
+
+   subroutine write_results()
+
+      implicit none
+
+      integer i, j
+
+      if (wc .eq. .true.) then
+         w(:, 1) = 0
+         do i = 2, nt
+            do j = 1, 3
+               !w(j, i - 1) = dimag(log(f(2*j - 1, i)*cdexp(ic*f(2*j, i))/(f(2*j - 1, i - 1)*cdexp(ic*f(2*j, i - 1)))))/dt
+               w(j, i) = (f(2*j, i) - f(2*j, i - 1))/dt
+            end do
+         end do
+         print *, 'Frequency calculated from phase. ( WC = ', wc, ')'
+      elseif (wc .eq. .false.) then
+         call freq()
+         print *, 'Frequency calculated from RHS. ( WC = ', wc, ')'
+      end if
+
+      phi(:, 1) = 0; 
+      do i = 2, nt
+         do j = 1, 3
+            phi(j, i) = phi(j, i - 1) + dimag(log(f(2*j - 1, i)*cdexp(ic*f(2*j, i))/(f(2*j - 1, i - 1)*cdexp(ic*f(2*j, i - 1)))))
+         end do
+      end do
+
+      breaknum(:) = 0
+      fcomp(1) = f(2*1 - 1, 1)*cdexp(ic*f(2*1, 1))
+      fcomp(2) = f(2*2 - 1, 1)*cdexp(ic*f(2*2, 1))
+      fcomp(3) = f(2*3 - 1, 1)*cdexp(ic*f(2*3, 1))
+      phitmp0(:) = datan2(dimag(fcomp(:)), dreal(fcomp(:)))
+      !phitmp0(:) = datan2(dimag(f(:, 1)), dreal(f(:, 1)))
+      phios(:, 1) = phitmp0(:)
+      do i = 2, nt
+         do j = 1, 3
+            fc = f(2*j - 1, i)*cdexp(ic*f(2*j, i))
+            phitmp1(j) = datan2(dimag(fc), dreal(fc))
+            if ((phitmp1(j) - phitmp0(j)) .gt. pi) breaknum(j) = breaknum(j) - 1
+            if ((phitmp1(j) - phitmp0(j)) .lt. -pi) breaknum(j) = breaknum(j) + 1
+            phios(j, i) = phitmp1(j) + 2.*pi*breaknum(j)
+            !phios(j, i) = phitmp1(j)
+            phitmp0(j) = phitmp1(j)
+         end do
+      end do
+
+      do i = 1, nt - 1
+         do j = 1, 3
+            wos(j, i) = (phios(j, i + 1) - phios(j, i))/dt
+         end do
+      end do
+
+      write (*, '(/)')
+
+      !pause
+
+      open (3, file='cl1.dat')
+      do i = 1, nt
+         write (3, '(5e17.8)') tax(i), cl1(i), lhs1(i), rhs1(i), abs(cl1(i)/lhs1(i))
+      end do
+      close (3)
+
+      open (3, file='cl2.dat')
+      do i = 1, nt
+         write (3, '(5e17.8)') tax(i), cl2(i), lhs2(i), rhs2(i), abs(cl2(i)/lhs2(i))
+      end do
+      close (3)
+
+      open (1, file='F.dat')
+      do i = 1, nt
+         !write (1, '(4e17.8)') tax(i), dabs(f(1, i)), dabs(f(3, i)), dabs(f(5, i))
+         write (1, '(4e17.8)') tax(i), f(1, i), f(3, i), f(5, i)
+      end do
+      close (1)
+
+      open (13, file='FCMPLX.dat')
+      do i = 1, nt
+         fcomp(1) = f(2*1 - 1, i)*cdexp(ic*f(2*1, i))
+         fcomp(2) = f(2*2 - 1, i)*cdexp(ic*f(2*2, i))
+         fcomp(3) = f(2*3 - 1, i)*cdexp(ic*f(2*3, i))
+         write (13, '(7e17.8)') tax(i), dreal(fcomp(1)), dimag(fcomp(1)), dreal(fcomp(2)), dimag(fcomp(2)), &
+            dreal(fcomp(3)), dimag(fcomp(3))
+      end do
+      close (13)
+
+      open (2, file='E.dat')
+      do i = 1, nt
+         write (2, '(5e17.8)') tax(i), eta(1, i), etag(1, i), eta(2, i), etag(2, i)
+      end do
+      close (2)
+
+      open (3, file='W.dat')
+      do i = 1, nt
+         write (3, '(4e17.8)') tax(i), w(1, i), w(2, i), w(3, i)
+      end do
+      close (3)
+
+      open (1, file='P.dat')
+      do i = 1, nt
+         !write (1, '(4e17.8)') tax(i), phi(1, i), phi(2, i), phi(3, i)
+         write (1, '(4e17.8)') tax(i), f(2, i), f(4, i), f(6, i)
+      end do
+      close (1)
+
+      open (1, file='POS.dat')
+      do i = 1, nt
+         write (1, '(4e17.8)') tax(i), phios(1, i), phios(2, i), phios(3, i)
+      end do
+      close (1)
+
+      open (3, file='WOS.dat')
+      do i = 1, nt - 1
+         write (3, '(4e17.8)') tax(i + 1), wos(1, i), wos(2, i), wos(3, i)
+      end do
+      close (3)
+
+      call write_param()
+
+      return
+
+101   print *, 'error of file open.'
+      pause
+      stop
+102   print *, 'error of file reading.'
+      pause
+      stop
+103   print *, 'error of file writing.'
+      pause
+      stop
+   end subroutine write_results
 
    subroutine ode4f()
       import
