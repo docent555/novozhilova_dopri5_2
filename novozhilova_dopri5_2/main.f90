@@ -12,10 +12,10 @@ program sys15f
    call init()
 
    do i = 1, ne
-      p(i, 1) = real(exp(ic*(i - 1)/dble(ne)*2*pi))
-      p(ne + i, 1) = imag(exp(ic*(i - 1)/dble(ne)*2*pi))
-      p(2*ne + i, 1) = real(exp(ic*(i - 1)/dble(ne)*2*pi))
-      p(3*ne + i, 1) = imag(exp(ic*(i - 1)/dble(ne)*2*pi))
+      p(i, 1) = dreal(cdexp(ic*(i - 1)/dble(ne)*2.0d0*pi))
+      p(ne + i, 1) = dimag(cdexp(ic*(i - 1)/dble(ne)*2.0d0*pi))
+      p(2*ne + i, 1) = dreal(cdexp(ic*(i - 1)/dble(ne)*2.0d0*pi))
+      p(3*ne + i, 1) = dimag(cdexp(ic*(i - 1)/dble(ne)*2.0d0*pi))
    end do
 
    write (*, '(/)')

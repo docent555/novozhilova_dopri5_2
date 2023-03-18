@@ -133,7 +133,7 @@ contains
       namelist /param/ ne, tend, zex, q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, &
          dcir1, dcir2, r1, r2, f10, f20, f30, p10, p20, p30, dt, dz, pitch, ftol, ptol, wc
 
-      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, dcir1, dcir2, r1, r2, tol
+      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, dcir1, dcir2, r1, r2
 
       open (unit=1, file='input_fortran.in', status='old', err=101)
       read (unit=1, nml=param, err=102)
@@ -168,7 +168,7 @@ contains
       implicit none
 
       namelist /param/ ne, tend, zex, q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, &
-         dcir1, dcir2, r1, r2, f10, f20, f30, p10, p20, p30, dt, dz, pitch, ftol, ptol
+         dcir1, dcir2, r1, r2, f10, f20, f30, p10, p20, p30, dt, dz, pitch, ftol, ptol, wc
 
       real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, dcir1, dcir2, r1, r2
 
@@ -581,13 +581,6 @@ contains
       s(5) = -f3 + a1*f1*dcos(phi1 - phi3) + a2*f2*dcos(phi2 - phi3)
       s(6) = a1*f1/f3*dsin(phi1 - phi3) + a2*f2/f3*dsin(phi2 - phi3)
 
-      !if (mod(iter_num, 4) .eq. 0) then
-      !    w1(1, time_num) = s(2)
-      !    w1(2, time_num) = s(4)
-      !    w1(3, time_num) = s(6)
-      !    time_num = time_num + 1
-      !end if
-      !iter_num = iter_num + 1
    end subroutine dfdt
 
    subroutine freq()
@@ -603,8 +596,8 @@ contains
       common/internp/xoutp, itp
 
       do ii = 2, nt
-         fp(1) = f(1, ii)*exp(ic*f(2, ii))
-         fp(2) = f(3, ii)*exp(ic*f(4, ii))
+         fp(1) = f(1, ii)*cdexp(ic*f(2, ii))
+         fp(2) = f(3, ii)*cdexp(ic*f(4, ii))
 
          rparp = 0.0
          iparp = 0
@@ -726,8 +719,10 @@ contains
          eta(:, itf) = eff(pex)
          !eta(:, itf) = eff(p(:, nz))
          etag(:, itf) = pitch**2/(pitch**2 + 1)*eta(:, itf)
-            write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f8.5,a,f8.5,\,a)') 'Time = ', xoutf, '   |F1| = ', abs(f(1,itf)), '   |F2| = ', abs(f(3,itf)), &
-            '   |F3| = ', abs(f(5, itf)), '   Eff1 = ', eta(1, itf), '   Eff2 = ', eta(2, itf), '  cl1 =', cl1(itf), '  cl2 =', cl2(itf), char(13)
+         write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f8.5,a,f8.5,\,a)') 'Time = ', xoutf, &
+            '   |F1| = ', abs(f(1, itf)), '   |F2| = ', abs(f(3, itf)), &
+            '   |F3| = ', abs(f(5, itf)), '   Eff1 = ', eta(1, itf), '   Eff2 = ', eta(2, itf), &
+            '  c1 =', abs(cl1(itf)/rhs1(itf)), '  c2 =', abs(cl2(itf)/rhs2(itf)), char(13)
          xoutf = x + dt
       else
 10       continue
@@ -740,8 +735,10 @@ contains
             eta(:, itf) = eff(pex)
             !eta(:, itf) = eff(p(:, nz))
             etag(:, itf) = pitch**2/(pitch**2 + 1)*eta(:, itf)
-                write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f8.5,a,f8.5,\,a)') 'Time = ', xoutf, '   |F1| = ', abs(f(1,itf)), '   |F2| = ', abs(f(3,itf)), &
-               '   |F3| = ', abs(f(5, itf)), '   Eff1 = ', eta(1, itf), '   Eff2 = ', eta(2, itf), '  cl1 =', cl1(itf), '  cl2 =', cl2(itf), char(13)
+            write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f8.5,a,f8.5,\,a)') 'Time = ', xoutf, &
+               '   |F1| = ', abs(f(1, itf)), '   |F2| = ', abs(f(3, itf)), &
+               '   |F3| = ', abs(f(5, itf)), '   Eff1 = ', eta(1, itf), '   Eff2 = ', eta(2, itf), &
+               '  c1 =', abs(cl1(itf)/rhs1(itf)), '  c2 =', abs(cl2(itf)/rhs2(itf)), char(13)
             xoutf = xoutf + dt
             goto 10
          end if
