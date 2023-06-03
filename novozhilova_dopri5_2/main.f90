@@ -18,6 +18,12 @@ program sys15f
       p(3*ne + i, 1) = dimag(cdexp(ic*(i - 1)/dble(ne)*2.0d0*pi))
    end do
 
+   !open (1, file='p_init.dat')
+   !do i = 1, ne
+   !   write (1, '(i, 4f17.8)') i, p(i, 1), p(ne + i, 1), p(2*ne + i, 1), p(3*ne + i, 1)
+   !end do
+   !close (1)
+
    write (*, '(/)')
 
    start_time = dclock()
