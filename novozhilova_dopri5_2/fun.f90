@@ -7,9 +7,9 @@ module fun
    real(c_double) zex, dz, tend, dtr(2), q(3), icu(2), th(2), a(2), dcir(2), r(2), f0(3), dt, &
       pitch, f10, f20, f30, p10, p20, p30, rtolf, rtolp, atolf, atolp, rparf, rparp, ftol, ptol, nharm, &
       gamma, ukv, betta, betta2, betta_z, betta_z2, betta_perp, betta_perp2, gmp, w_op, c, e, m, &
-      artolp(1), aatolp(1), arparp(1)
+      artolp(1), aatolp(1), arparp(1), b(2), w_n(2), ia(2), norm, nfac
    complex(c_double_complex) fp(2)
-   logical(c_bool) wc, fok, lensm
+   logical(c_bool) wc, fok, lensm, btod, iatoi
 
    integer(c_int) breaknum(3)
    real(c_double) phitmp0(3), phitmp1(3)
@@ -53,6 +53,26 @@ contains
 
       if (lensm .eq. .true.) zex = betta_perp2/2.0d0/betta_z*w_op*zex/nharm/c
       print *, 'Zex = ', zex
+
+      if (btod .eq. .true.) then
+         w_n(1) = e*B(1)/(m*c)*10000.0d0
+         dtr(1) = (2.0/betta_perp2)*(1.0 - (2.0*w_n(1))/(gamma*w_op))
+         w_n(2) = e*B(2)/(m*c)*10000.0d0
+         dtr(2) = (2.0/betta_perp2)*(1.0 - (2.0*w_n(2))/(gamma*w_op))
+      end if            
+      
+      call norma(norm)
+
+      if (iatoi .eq. .true.) then         
+         nfac = factorial(inharm)         
+         icu(1) = 2.35/10000*IA(1)*(nharm**(inharm + 1)/2.0**(inharm - 1)/nfac)**2 &
+                  *(Q(1)*gmp*betta**(2*inharm - 4)/gamma/betta_z)/norm
+         icu(2) = 2.35/10000*IA(2)*(nharm**(inharm + 1)/2.0**(inharm - 1)/nfac)**2 &
+                  *(Q(2)*gmp*betta**(2*inharm - 4)/gamma/betta_z)/norm
+      end if      
+      
+      print *, 'dtr1 = ', dtr(1), 'dtr2 = ', dtr(2)
+      print *, 'icu1 = ', icu(1), 'icu2 = ', icu(2)
 
       nt = tend/dt + 1
       nz = zex/dz + 1
@@ -99,6 +119,33 @@ contains
       !stop
 
    end subroutine init
+   
+   subroutine norma(norm)
+      use, intrinsic :: iso_c_binding, only: c_double, c_double_complex, c_int
+      import, only:rea, ima, betta_perp2, betta_z, inharm, c, w_op!, omega
+      implicit none
+
+      real(c_double) :: dzz = 0.0280211, norm
+      complex(c_double_complex) :: u(663)
+
+      dzz = betta_perp2/2.0d0/betta_z*w_op*dzz/inharm/c
+      u = dcmplx(rea, ima)
+
+      norm = sum(cdabs(u(:))*cdabs(u(:)))*dzz
+
+      print *, 'N = ', norm
+
+   end subroutine norma
+   
+   recursive function factorial(p) result(l)
+      integer, intent(in) :: p
+      integer l
+      if (p == 1) then
+         l = 1
+      else
+         l = p*factorial(p - 1)
+      end if
+   end function
 
    function squval(zz)
 
@@ -216,9 +263,9 @@ contains
 
       namelist /param/ ne, tend, zex, q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, &
          dcir1, dcir2, r1, r2, f10, f20, f30, p10, p20, p30, dt, dz, pitch, ftol, ptol, wc, fok, inharm, ukv, &
-         w_op, lensm
+         w_op, lensm, btod, b1, b2, iatoi, ia1, ia2
 
-      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, dcir1, dcir2, r1, r2
+      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, dcir1, dcir2, r1, r2, b1, b2, ia1, ia2
 
       open (unit=1, file='input_fortran.in', status='old', err=101)
       read (unit=1, nml=param, err=102)
@@ -239,6 +286,10 @@ contains
       dcir(2) = dcir2
       r(1) = r1
       r(2) = r2
+      b(1) = b1
+      b(2) = b2
+      ia(1) = ia1
+      ia(2) = ia2
 
       write (*, nml=param)
 
@@ -254,11 +305,13 @@ contains
 
       namelist /param/ ne, tend, zex, q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, &
          dcir1, dcir2, r1, r2, f10, f20, f30, p10, p20, p30, dt, dz, pitch, ftol, ptol, wc, fok, inharm, ukv, &
-         w_op, lensm
+         w_op, lensm, btod, b1, b2, iatoi, ia1, ia2
 
-      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, dcir1, dcir2, r1, r2
+      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dtr1, dtr2, dcir1, dcir2, r1, r2, b1, b2, ia1, ia2
+      logical wc
 
       open (unit=1, file='input_fortran.in', status='old', err=101)
+      !print *, 'OK1'
       read (unit=1, nml=param, err=102)
       close (unit=1)
 
@@ -270,6 +323,7 @@ contains
       p30 = mod(f(6, nt), 2*pi)
 
       open (unit=1, file='input_fortran_next.in', err=101)
+      !print *, 'OK2'
       write (1, nml=param)
       close (unit=1)
 
@@ -836,9 +890,11 @@ contains
          eta(:, itf) = eff(pex)
          !eta(:, itf) = eff(p(:, nz))
          etag(:, itf) = pitch**2/(pitch**2 + 1)*eta(:, itf)
-         write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f6.3,a,f6.3,\,a,a)') 'Time = ', xoutf, &
-            '   |F1| = ', abs(f(1, itf)), '   |F2| = ', abs(f(3, itf)), &
-            '   |F3| = ', abs(f(5, itf)), '   Eff1 = ', eta(1, itf), '   Eff2 = ', eta(2, itf), &
+         !write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f6.3,a,f6.3,\,a,a)') 'Time = ', xoutf, &
+            write (*, '(a,f8.3,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f9.5,a,f9.5,a,f9.5,a,f5.3,a,f5.3,a,\,a)') 't =', xoutf, &
+            '  |F1| = ', abs(f(1, itf)), '  |F2| = ', abs(f(3, itf)), &
+            '  |F3| = ', abs(f(5, itf)), '  Eff1 = ', eta(1, itf), '  Eff2 = ', eta(2, itf), &
+            '  w1 = ', f(2,itf), '  w2 = ', f(4,itf), '  w3 = ', f(6,itf), &
             '  c1 = ', abs(cl1(itf)/rhs1(itf))*100, '%  c2 = ', abs(cl2(itf)/rhs2(itf))*100, '%', char(13)
          xoutf = x + dt
       else
@@ -852,9 +908,11 @@ contains
             eta(:, itf) = eff(pex)
             !eta(:, itf) = eff(p(:, nz))
             etag(:, itf) = pitch**2/(pitch**2 + 1)*eta(:, itf)
-            write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f6.3,a,f6.3,\,a,a)') 'Time = ', xoutf, &
-               '   |F1| = ', abs(f(1, itf)), '   |F2| = ', abs(f(3, itf)), &
-               '   |F3| = ', abs(f(5, itf)), '   Eff1 = ', eta(1, itf), '   Eff2 = ', eta(2, itf), &
+            !write (*, '(a,f10.5,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f10.6,a,f6.3,a,f6.3,\,a,a)') 'Time = ', xoutf, &
+            write (*, '(a,f8.3,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f9.5,a,f9.5,a,f9.5,a,f5.3,a,f5.3,a,\,a)') 't =', xoutf, &
+               '  |F1| = ', abs(f(1, itf)), '  |F2| = ', abs(f(3, itf)), &
+               '  |F3| = ', abs(f(5, itf)), '  Eff1 = ', eta(1, itf), '  Eff2 = ', eta(2, itf), &
+               '  w1 = ', f(2,itf), '  w2 = ', f(4,itf), '  w3 = ', f(6,itf), &
                '  c1 = ', dabs(cl1(itf)/rhs1(itf))*100, '%  c2 = ', dabs(cl2(itf)/rhs2(itf))*100, '%', char(13)
             xoutf = xoutf + dt
             goto 10
