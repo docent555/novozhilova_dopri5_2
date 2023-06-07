@@ -898,7 +898,7 @@ contains
             write (*, '(a,f8.3,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f9.5,a,f9.5,a,f9.5,a,f5.3,a,f5.3,a,\,a)') 't =', xoutf, &
             '  |F1| = ', abs(f(1, itf)), '  |F2| = ', abs(f(3, itf)), &
             '  |F3| = ', abs(f(5, itf)), '  Eff1 = ', eta(1, itf), '  Eff2 = ', eta(2, itf), &
-            '  w1 = ', f(2,itf), '  w2 = ', f(4,itf), '  w3 = ', f(6,itf), &
+            '  phi1 = ', f(2,itf), '  phi2 = ', f(4,itf), '  phi3 = ', f(6,itf), &
             '  c1 = ', abs(cl1(itf)/rhs1(itf))*100, '%  c2 = ', abs(cl2(itf)/rhs2(itf))*100, '%', char(13)
          xoutf = x + dt
       else
@@ -916,7 +916,7 @@ contains
             write (*, '(a,f8.3,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f9.5,a,f9.5,a,f9.5,a,f5.3,a,f5.3,a,\,a)') 't =', xoutf, &
                '  |F1| = ', abs(f(1, itf)), '  |F2| = ', abs(f(3, itf)), &
                '  |F3| = ', abs(f(5, itf)), '  Eff1 = ', eta(1, itf), '  Eff2 = ', eta(2, itf), &
-               '  w1 = ', f(2,itf), '  w2 = ', f(4,itf), '  w3 = ', f(6,itf), &
+               '  phi1 = ', f(2,itf), '  phi2 = ', f(4,itf), '  phi3 = ', f(6,itf), &
                '  c1 = ', dabs(cl1(itf)/rhs1(itf))*100, '%  c2 = ', dabs(cl2(itf)/rhs2(itf))*100, '%', char(13)
             xoutf = xoutf + dt
             goto 10
