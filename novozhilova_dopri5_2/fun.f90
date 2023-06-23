@@ -117,6 +117,8 @@ contains
       !end do
       !close (1)
       !stop
+      
+      w(:,:) = 0
 
    end subroutine init
    
@@ -342,19 +344,19 @@ contains
 
       integer i, j
 
-      if (wc .eq. .true.) then
-         w(:, 1) = 0
-         do i = 2, nt
-            do j = 1, 3
-               !w(j, i - 1) = dimag(log(f(2*j - 1, i)*cdexp(ic*f(2*j, i))/(f(2*j - 1, i - 1)*cdexp(ic*f(2*j, i - 1)))))/dt
-               w(j, i) = (f(2*j, i) - f(2*j, i - 1))/dt
-            end do
-         end do
-         print *, 'Frequency calculated from phase. ( WC = ', wc, ')'
-      elseif (wc .eq. .false.) then
+      !if (wc .eq. .true.) then
+      !   w(:, 1) = 0
+      !   do i = 2, nt
+      !      do j = 1, 3
+      !         !w(j, i - 1) = dimag(log(f(2*j - 1, i)*cdexp(ic*f(2*j, i))/(f(2*j - 1, i - 1)*cdexp(ic*f(2*j, i - 1)))))/dt
+      !         w(j, i) = (f(2*j, i) - f(2*j, i - 1))/dt
+      !      end do
+      !   end do
+      !   print *, 'Frequency calculated from phase. ( WC = ', wc, ')'
+      !elseif (wc .eq. .false.) then
          call freq()
          print *, 'Frequency calculated from RHS. ( WC = ', wc, ')'
-      end if
+      !end if
 
       phi(:, 1) = 0; 
       do i = 2, nt
@@ -394,20 +396,20 @@ contains
 
       open (3, file='cl1.dat')
       do i = 1, nt
-         write (3, '(5e17.8)') tax(i), cl1(i), lhs1(i), rhs1(i), abs(cl1(i)/lhs1(i))
+         write (3, '(5f12.6,a)') tax(i), cl1(i), lhs1(i), rhs1(i), abs(cl1(i)/lhs1(i))*100, ' %'
       end do
       close (3)
 
       open (3, file='cl2.dat')
       do i = 1, nt
-         write (3, '(5e17.8)') tax(i), cl2(i), lhs2(i), rhs2(i), abs(cl2(i)/lhs2(i))
+         write (3, '(5f12.6,a)') tax(i), cl2(i), lhs2(i), rhs2(i), abs(cl2(i)/lhs2(i))*100, ' %'
       end do
       close (3)
 
       open (1, file='F.dat')
       do i = 1, nt
          !write (1, '(4e17.8)') tax(i), dabs(f(1, i)), dabs(f(3, i)), dabs(f(5, i))
-         write (1, '(4e17.8)') tax(i), f(1, i), f(3, i), f(5, i)
+         write (1, '(4f12.6)') tax(i), f(1, i), f(3, i), f(5, i)
       end do
       close (1)
 
@@ -416,39 +418,39 @@ contains
          fcomp(1) = f(2*1 - 1, i)*cdexp(ic*f(2*1, i))
          fcomp(2) = f(2*2 - 1, i)*cdexp(ic*f(2*2, i))
          fcomp(3) = f(2*3 - 1, i)*cdexp(ic*f(2*3, i))
-         write (13, '(7e17.8)') tax(i), dreal(fcomp(1)), dimag(fcomp(1)), dreal(fcomp(2)), dimag(fcomp(2)), &
+         write (13, '(7f12.6)') tax(i), dreal(fcomp(1)), dimag(fcomp(1)), dreal(fcomp(2)), dimag(fcomp(2)), &
             dreal(fcomp(3)), dimag(fcomp(3))
       end do
       close (13)
 
       open (2, file='E.dat')
       do i = 1, nt
-         write (2, '(5e17.8)') tax(i), eta(1, i), etag(1, i), eta(2, i), etag(2, i)
+         write (2, '(5f12.6)') tax(i), eta(1, i), etag(1, i), eta(2, i), etag(2, i)
       end do
       close (2)
 
       open (3, file='W.dat')
       do i = 1, nt
-         write (3, '(4e17.8)') tax(i), w(1, i), w(2, i), w(3, i)
+         write (3, '(4f12.6)') tax(i), w(1, i), w(2, i), w(3, i)
       end do
       close (3)
 
       open (1, file='P.dat')
       do i = 1, nt
          !write (1, '(4e17.8)') tax(i), phi(1, i), phi(2, i), phi(3, i)
-         write (1, '(4e17.8)') tax(i), f(2, i), f(4, i), f(6, i)
+         write (1, '(4f12.6)') tax(i), f(2, i), f(4, i), f(6, i)
       end do
       close (1)
 
       open (1, file='POS.dat')
       do i = 1, nt
-         write (1, '(4e17.8)') tax(i), phios(1, i), phios(2, i), phios(3, i)
+         write (1, '(4f12.6)') tax(i), phios(1, i), phios(2, i), phios(3, i)
       end do
       close (1)
 
       open (3, file='WOS.dat')
       do i = 1, nt - 1
-         write (3, '(4e17.8)') tax(i + 1), wos(1, i), wos(2, i), wos(3, i)
+         write (3, '(4f12.6)') tax(i + 1), wos(1, i), wos(2, i), wos(3, i)
       end do
       close (3)
 
@@ -898,8 +900,8 @@ contains
             write (*, '(a,f8.3,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f9.5,a,f9.5,a,f9.5,a,f5.3,a,f5.3,a,\,a)') 't =', xoutf, &
             '  |F1| = ', abs(f(1, itf)), '  |F2| = ', abs(f(3, itf)), &
             '  |F3| = ', abs(f(5, itf)), '  Eff1 = ', eta(1, itf), '  Eff2 = ', eta(2, itf), &
-            '  phi1 = ', f(2,itf), '  phi2 = ', f(4,itf), '  phi3 = ', f(6,itf), &
-            '  c1 = ', abs(cl1(itf)/rhs1(itf))*100, '%  c2 = ', abs(cl2(itf)/rhs2(itf))*100, '%', char(13)
+            '  ph1 = ', f(2,itf), '  ph2 = ', f(4,itf), '  ph3 = ', f(6,itf), &
+            '  c1 = ', abs(cl1(itf)/rhs1(itf))*100, ' %  c2 = ', abs(cl2(itf)/rhs2(itf))*100, ' %', char(13)
          xoutf = x + dt
       else
 10       continue
@@ -916,8 +918,8 @@ contains
             write (*, '(a,f8.3,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f8.5,a,f9.5,a,f9.5,a,f9.5,a,f5.3,a,f5.3,a,\,a)') 't =', xoutf, &
                '  |F1| = ', abs(f(1, itf)), '  |F2| = ', abs(f(3, itf)), &
                '  |F3| = ', abs(f(5, itf)), '  Eff1 = ', eta(1, itf), '  Eff2 = ', eta(2, itf), &
-               '  phi1 = ', f(2,itf), '  phi2 = ', f(4,itf), '  phi3 = ', f(6,itf), &
-               '  c1 = ', dabs(cl1(itf)/rhs1(itf))*100, '%  c2 = ', dabs(cl2(itf)/rhs2(itf))*100, '%', char(13)
+               '  ph1 = ', f(2,itf), '  ph2 = ', f(4,itf), '  ph3 = ', f(6,itf), &
+               '  c1 = ', dabs(cl1(itf)/rhs1(itf))*100, ' %  c2 = ', dabs(cl2(itf)/rhs2(itf))*100, ' %', char(13)
             xoutf = xoutf + dt
             goto 10
          end if
